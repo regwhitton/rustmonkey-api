@@ -1,0 +1,7 @@
+{
+    "RustMonkeyFunction": {
+	    "DYNAMODB_SWITCH": "LOCAL",
+	    "LOCAL_DYNAMODB_ENDPOINT": "http://dynamodb:8000",
+	    "RUST_BACKTRACE": "1"
+     }
+}
