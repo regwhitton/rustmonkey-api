@@ -50,7 +50,7 @@ Use `make start-db` to start up local DynamoDB in Docker container.
 
 Use `./db/create-table.sh` to create local DynamoDB table.
 
-Use `make start-api` to start up the lamda and http gateway locally, then `curl http://localhost:3000/`.
+Use `make start-api` to start up the lamda and http gateway locally on `http://localhost:3000/`.
 
 Use the scripts within `test-scripts` to try out the functionality by making curl requests to the local http gateway.  Have fun trying to debit an account without sufficient credit.
 
