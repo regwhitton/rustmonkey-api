@@ -38,8 +38,6 @@ If you use Visual Studio Code with the rust-analyzer plugin then you must do the
         "rust-analyzer.server.extraEnv": { "CARGO_TARGET_DIR":"../target" }
     }
 
-I have yet to setup debugging from VSC.
-
 ## Develop
 
 Use `make clean` to remove anything previously built.
