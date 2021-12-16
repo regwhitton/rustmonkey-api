@@ -52,16 +52,18 @@ Use `./db/create-table.sh` to create local DynamoDB table.
 
 Use `make start-api` to start up the lamda and http gateway locally, then `curl http://localhost:3000/`.
 
-Use `./debit-account.sh` to make a test request to the local http gateway.
+Use the scripts within `test-scripts` to try out the functionality by making curl requests to the local http gateway.  Have fun trying to debit an account without sufficient credit.
 
-Check out the other commands in the Makefile file.
+Browse to <http://localhost:8001> to view the contents of the DynamoDB table.
+
+Also: check out the other commands in the Makefile file.
 
 ## Deploy
 
-For the first deployment use `sam deploy --guided` to deploy the lambda into your AWS account (as shown in [Deploy your application to the AWS Cloud](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-getting-started-hello-world.html#serverless-getting-started-hello-world-deploy)).  Use the stack name `rustmonkey-api`.
+For the first deployment use `sam deploy --guided` to deploy the lambda into your AWS account (as shown in [Deploy your application to the AWS Cloud](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-getting-started-hello-world.html#serverless-getting-started-hello-world-deploy)).  I suggest using the stack name `rustmonkey-api`.
 
 For subsequent deployments or updates you can use `sam deploy` or `make sam-deploy` and these will re-use the previous answers.
 
-Clean up your AWS resources by running `make sam-delete`.
+Clean up your AWS resources by running `make sam-delete`. (SAM creates an S3 bucket during deployment and logs that are not removed)
 
-SAM creates an S3 bucket during deployment and logs that are not removed.
+
