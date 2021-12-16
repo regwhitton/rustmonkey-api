@@ -1,6 +1,6 @@
 # rustmonkey-api 
 
-This is an example a Lambda using the [AWS SDK for Rust](https://docs.aws.amazon.com/sdk-for-rust/latest/dg/welcome.html), [DynamoDB](https://docs.rs/aws-sdk-dynamodb/latest/aws_sdk_dynamodb/) and [AWS SAM](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html).
+This is an example Lambda using the [AWS SDK for Rust](https://docs.aws.amazon.com/sdk-for-rust/latest/dg/welcome.html), [DynamoDB](https://docs.rs/aws-sdk-dynamodb/latest/aws_sdk_dynamodb/) and [AWS SAM](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html).
 
 The instructions and makefiles here assume use under Linux.  They may work with some adjustment under MacOS or WSL2.
 
