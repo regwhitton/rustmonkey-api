@@ -82,7 +82,7 @@ Resources:
       PrimaryKey:
         Name: accountId
         Type: String
-      TableName: Account
+      TableName: Accounts
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
