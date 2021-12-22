@@ -24,18 +24,18 @@ I have been using Visual Studio Code (from https://code.visualstudio.com/docs/se
 
 I haven't yet figured out how to debug within the SAM container.
 
-#### .vscode/settings
+#### .vscode/settings,json
 
 `sam build` copies everything from the CodeUri folder (lambda) to a temporary build area in /tmp.
 To avoid it spending a lot of time uselessly copying previously built dependencies, the
 target folder is configured to be outside of lambda by setting the CARGO_TARGET_DIR environment variable.
 
-If you use Visual Studio Code with the rust-analyzer plugin then you must do the same by adding this option
-.vscode/setting.json
+If you use Visual Studio Code with the rust-analyzer plugin then you must do the same by adding these options to .vscode/setting.json
 
     {
         ...
-        "rust-analyzer.server.extraEnv": { "CARGO_TARGET_DIR":"../target" }
+        "rust-analyzer.server.extraEnv": { "CARGO_TARGET_DIR":"../target" },
+        "rust-analyzer.runnableEnv": { "CARGO_TARGET_DIR":"../target" }
     }
 
 ## Develop

@@ -10,8 +10,7 @@ use simple_logger::SimpleLogger;
 mod account;
 mod dynamodb;
 mod error;
-mod request_handler;
-mod request_router;
+mod web;
 
 // Re-export for easy access at crate scope.
 pub use error::AppError;
@@ -28,13 +27,10 @@ async fn main() -> Result<(), Error> {
 }
 
 use account::{AccountService,AccountDao};
-use request_handler::RequestHandler;
-use request_router::RequestRouter;
 
-async fn wire_up_components() -> Result<RequestHandler, Error> {
+async fn wire_up_components() -> Result<web::RequestHandler, Error> {
     let ddb_client = dynamodb::create_client().await?;
     let account_dao = AccountDao::new(ddb_client);
     let account_service = AccountService::new(account_dao);
-    let router = RequestRouter::new(account_service);
-    Ok(RequestHandler::new(router))
+    Ok(web::create_request_handler(account_service))
 }

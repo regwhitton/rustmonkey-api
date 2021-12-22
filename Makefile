@@ -19,6 +19,13 @@ build:
 	cd lambda && env PROFILE=debug CARGO_TARGET_DIR="$(PWD)/target" $(MAKE) build
 
 #
+# Run tests.
+#
+.PHONY: test
+test:
+	cd lambda && env PROFILE=debug CARGO_TARGET_DIR="$(PWD)/target" RUST_BACKTRACE=1 $(MAKE) test
+
+#
 # Compile is release mode. Doesn't hide compiler output.
 #
 .PHONY: build-release

@@ -11,17 +11,19 @@ use crate::AppError;
 ///
 /// The idea of a true lambda is to perform one function, so perhaps this sort of
 /// routing should not exist.
+#[cfg_attr(test, faux::create)]
 pub struct RequestRouter {
     account_service: AccountService,
 }
 
+#[cfg_attr(test, faux::methods)]
 impl RequestRouter {
     pub fn new(account_service: AccountService) -> Self {
         Self { account_service }
     }
 
     /// Routes request to handling code.
-    /// Deserialises JSON payload and serialises response.
+    /// Deserialises JSON payload and serialises response.    
     pub async fn route(&self, request: Request) -> Result<Response<Body>, AppError> {
         let path = request.uri().path().trim_end_matches('/');
 

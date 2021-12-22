@@ -2,6 +2,11 @@ use std::env;
 use lambda_http::lambda_runtime::Error;
 use aws_sdk_dynamodb::{Client, Config, Credentials, Endpoint, Region};
 
+/// Create a DynamoDB client.
+///
+/// If DYNAMONDB_SWITCH environment variable is "LOCAL" (see template.yaml)
+/// then LOCAL_DYNAMODB_ENDPOINT and REGION are used to connect to the
+/// dynamodb-local. Otherwise the connection is made to the AWS infrastructure.
 pub async fn create_client() -> Result<Client, Error> {
     if env::var("DYNAMODB_SWITCH")? == "LOCAL" {
         let dynamodb_url = env::var("LOCAL_DYNAMODB_ENDPOINT")?;
@@ -27,7 +32,6 @@ pub async fn create_client() -> Result<Client, Error> {
         Ok(Client::from_conf(config))
     } else {
         let config = aws_config::from_env().load().await;
-        log::info!("Got config");
         Ok(Client::new(&config))
     }
 }

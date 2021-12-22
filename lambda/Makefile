@@ -14,6 +14,13 @@ build:
 	cargo build --target x86_64-unknown-linux-musl
 
 #
+# Run tests - used from Makefile above.
+#
+.PHONY: test
+test:
+	cargo test
+
+#
 # Not intended for use directly.  Used via "sam build" from Makefile above.
 #
 .PHONY: build-RustMonkeyFunction
