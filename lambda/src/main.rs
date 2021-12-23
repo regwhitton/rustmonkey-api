@@ -17,7 +17,7 @@ pub use error::AppError;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    SimpleLogger::new().with_level(LevelFilter::Info).init()?;
+    SimpleLogger::new().with_level(LevelFilter::Info).env().init()?;
     info!("RustMonkey-api is warming up");
 
     let root = wire_up_components().await?;

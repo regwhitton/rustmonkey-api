@@ -33,6 +33,13 @@ Parameters:
       - 0
       - 1
     Default: 0
+  RustLog:
+    Type: String
+    Description: Configure logging.
+    # See https://docs.rs/env_logger/latest/env_logger/#enabling-logging
+    # Although simple_logger claims compatibility, I haven't found the
+    # more complex configuration to work.
+    Default: 'info'
 
 Resources:
   RustMonkeyFunction:
@@ -71,6 +78,7 @@ Resources:
           LOCAL_DYNAMODB_ENDPOINT: !Ref LocalDynamoDbEndpoint
           REGION: !Ref RegionName
           RUST_BACKTRACE: !Ref RustBacktrace
+          RUST_LOG: !Ref RustLog
 
       Policies:
         -  DynamoDBCrudPolicy:
