@@ -37,7 +37,7 @@ impl RequestHandler {
             }
             Err(app_err) => match app_err {
                 AppError::Internal(error) => {
-                    // Pass through to Lambda Runtime to log and deal with
+                    // Pass through to Lambda Runtime so that it is logged and a 500 sent to the client.
                     Err(error)
                 }
                 AppError::Business(message, status_code) => {
@@ -48,15 +48,14 @@ impl RequestHandler {
                         status_code,
                         message
                     );
-                    to_error_json(status_code, message)
+                    serialise_error_to_json(status_code, message)
                 }
             },
         }
     }
 }
 
-// Serialises argument into a JSON payload response with given HTTP status.
-fn to_error_json(status_code: StatusCode, message: String) -> Result<Response<Body>, Error> {
+fn serialise_error_to_json(status_code: StatusCode, message: String) -> Result<Response<Body>, Error> {
     let body = serde_json::to_string(&ErrorDetails { error: message })?;
 
     Ok(Response::builder()
@@ -79,7 +78,9 @@ struct ErrorDetails {
 mod test {
     use super::{RequestHandler, RequestRouter};
     use faux::when;
+    use http::StatusCode;
     use lambda_http::{lambda_runtime::Context, Body, Request, Response};
+    use crate::AppError;
 
     const REQUEST_BODY_TEXT: &str = "{\"accountId\":\"sid\"}";
     const RESPONSE_BODY_TEXT: &str = "{\"balance\":25.10}";
@@ -103,7 +104,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn should_return_ok_response() {
+    async fn should_transform_ok_result_into_response_to_client() {
         // Given
         let mut router = RequestRouter::faux();
         when!(router.route).then(|_req| {
@@ -122,6 +123,53 @@ mod test {
             matches!(result, Ok(resp) if 
                 matches!(resp.body(), Body::Text(txt) if
                     *txt == RESPONSE_BODY_TEXT)));
+        // TODO test for content-type
+    }
+
+    #[tokio::test]
+    async fn should_return_internal_error_to_runtime_so_it_is_logged_and_500_returned() {
+        // Given
+        let mut router = RequestRouter::faux();
+        when!(router.route).then(|_req| {
+            let internal_error = std::io::Error::new(std::io::ErrorKind::Other, "internal error");
+            let wrapped_error = AppError::Internal(Box::new(internal_error));
+                Err(wrapped_error)
+        });
+        let handler = RequestHandler::new(router);
+
+        let request = request_with_text(REQUEST_BODY_TEXT);
+        let ctx = Context::default();
+
+        // When
+        let result = handler.handle_request(request, ctx).await;
+
+        // Then
+        assert!(
+            matches!(result, Err(boxed_err) if boxed_err.to_string() == "internal error"));
+    }
+
+    #[tokio::test]
+    async fn should_transform_business_error_into_response_to_client() {
+        // Given
+        let mut router = RequestRouter::faux();
+        when!(router.route).then(|_unacceptable_request| {
+            Err(AppError::unprocessable("I'm sorry Dave, I'm afraid I can't let you do that"))
+        });
+        let handler = RequestHandler::new(router);
+
+        let request = request_with_text(REQUEST_BODY_TEXT);
+        let ctx = Context::default();
+
+        // When
+        let result = handler.handle_request(request, ctx).await;
+
+        // Then
+        assert!(
+            matches!(result, Ok(resp) if
+                matches!(resp.status(), StatusCode::UNPROCESSABLE_ENTITY) &&
+                resp.headers().get("Content-Type").unwrap() == "application/json" &&
+                matches!(resp.body(), Body::Text(txt) if *txt == "{\"error\":\"I'm sorry Dave, I'm afraid I can't let you do that\"}")
+        ));
     }
 
     fn request_with_text(text: &str) -> Request {

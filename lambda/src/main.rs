@@ -5,7 +5,7 @@ use simple_logger::SimpleLogger;
 // 'mod' is a bit like C's #include in that it inserts the source at this point.
 // However, it is scoped within a separate named module, so you either need to
 // refer to items with the module's :: prefix, or include a 'use' statement
-// with bring the items into the current scope.
+// to bring the items into the current scope.
 
 mod account;
 mod dynamodb;
