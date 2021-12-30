@@ -150,3 +150,123 @@ fn decimal_attr(
 fn app_err(message: String) -> AppError {
     AppError::internal_s(message)
 }
+
+#[cfg(test)]
+mod test {
+
+    use std::{sync::Once, process::{Command, Stdio, Child, ChildStdout, ChildStdin}, str::FromStr, io::{Write, BufRead, BufReader}};
+    use aws_sdk_dynamodb::{Client, Config, Credentials, Endpoint, Region};
+    use super::{AccountDao, Account};
+    use bigdecimal::BigDecimal;
+    use http::Uri;
+
+    #[tokio::test]
+    async fn should_create_new_account() {
+        // Given
+        let account_id = "NEWACC001".to_string();
+        let amount = BigDecimal::from_str("10.10").expect("failed to parse number");
+        let account = Account{account_id: account_id.clone(), balance: amount.clone()};
+
+        let dao = AccountDao::new(get_dynamodb_client());
+
+        // When
+        dao.create_account(account).await.expect("could not create account");
+
+        // Then
+        let current_account = dao.read_account(account_id.clone()).await.expect("could not read account");
+        assert_eq!(current_account.account_id, account_id);
+        assert_eq!(current_account.balance, amount);
+    }
+
+    // These tests use DynamoDB in a docker container.
+    // The container is started and populated using script db/account-dao-test-setup.sh
+    // The script shuts down the container when the input stream closes, 
+    // which happens when the this test process exits.
+    // It's all terribly clunky, and should be moved into its own module.
+
+    fn get_dynamodb_client() -> Client {
+        unsafe {
+            DB_INITIALISER.call_once(|| {
+                DB_CLIENT = Some(setup_dynamodb_client());
+            });
+            match &DB_CLIENT {
+                Some(client) => client.clone(),
+                None => panic!("db client not initialised")
+            }
+        }
+    }
+
+    static mut DB_CLIENT: Option<Client> = Option::None;
+    static DB_INITIALISER: Once = Once::new();
+
+    fn setup_dynamodb_client() -> Client {
+        let mut dynamodb_process: Child = start_db_setup_script();
+
+        let script_stdout = dynamodb_process.stdout.take().expect("Failed to open script stdout");
+        let dynamodb_url = read_output_until_db_ready(script_stdout);
+
+        // When tests finish the input stream is closed, this causes the DB to shutdown.
+        let script_stdin = dynamodb_process.stdin.take().expect("Failed to open script stdin");
+        establish_input_stream(script_stdin);
+
+        let dynamodb_uri = dynamodb_url.parse().expect("Could not parse URL");
+        create_dynamodb_client(dynamodb_uri)
+    }
+
+    fn create_dynamodb_client(dynamodb_uri: Uri) -> Client {
+        let endpoint = Endpoint::immutable(dynamodb_uri);
+        let region = Region::new("eu-west-2");
+        let creds = Credentials::new(
+            "local_access_id",
+            "local_access_key",
+            None,
+            None,
+            "local_provider",
+        );
+        let config = Config::builder()
+            .credentials_provider(creds)
+            .region(region)
+            .endpoint_resolver(endpoint)
+            .build();
+        Client::from_conf(config)
+    }
+
+    fn start_db_setup_script() -> Child {
+        Command::new("bash")
+            .arg("../db/account-dao-test-setup.sh")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("Failed to spawn account-dao-test-setup.sh")
+    }
+
+    fn read_output_until_db_ready(script_stdout: ChildStdout) -> String {
+        let mut reader = BufReader::new(script_stdout);
+        let mut line = String::new();
+
+        loop {
+            match reader.read_line(&mut line) {
+                Ok(n_bytes) => {
+                    if n_bytes == 0 {
+                        panic!("Failed to find READY marker in script output");
+                    }
+                    let mut word_iter = line.split_whitespace();
+                    if matches!(word_iter.next(), Some(word) if word == "READY") {
+                        match word_iter.next() {
+                            Some(dynamo_url) => {
+                                return String::from(dynamo_url);
+                            },
+                            None => panic!("READY marker not followed by DB URL")
+                        };
+                    }
+                },
+                Err(error) => panic!("Failed to read READY marker: {:?}", error)
+            }
+        }
+    }
+
+    fn establish_input_stream(mut script_stdin: ChildStdin) {
+        script_stdin.write("Tests beginning\n".as_bytes()).expect("Failed to write script stdin");
+        script_stdin.flush().expect("Failed to flush buffer");
+    }
+}

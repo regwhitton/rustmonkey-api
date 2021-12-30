@@ -20,9 +20,11 @@ To run your Lambda locally [Install Docker community edition](https://hub.docker
 
 ### Visual Studio Code (optional)
 
-I have been using Visual Studio Code (from https://code.visualstudio.com/docs/setup/linux) with the rust-analyzer plugin by matklad.
+I have been using Visual Studio Code (from https://code.visualstudio.com/docs/setup/linux) with the plugins:
+* rust-analyzer by matklad.
+* CodeLLDB by Vadim Chugunov
 
-I haven't yet figured out how to debug within the SAM container.
+I haven't yet figured out how to debug within the SAM container, but the tests can be debugged from within the code editor.
 
 #### .vscode/settings,json
 
