@@ -46,6 +46,8 @@ Use `make clean` to remove anything previously built.
 
 Use `make` to compile.
 
+Use `make test` to run tests.
+
 Use `make sam-build` to compile and create AWS SAM deployable.
 
 Use `make start-db` to start up local DynamoDB in Docker container.
