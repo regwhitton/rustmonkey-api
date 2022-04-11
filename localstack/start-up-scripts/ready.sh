@@ -1,0 +1,2 @@
+
+touch /target/localstack.ready

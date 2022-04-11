@@ -1,0 +1,11 @@
+[build]
+
+# During a "sam build" this setting is overriden using the CARGO_TARGET_DIR
+# environment variable, to stop cargo trying to build into /tmp/target.
+target-dir = "../target" 
+
+# Needed according to See: https://aws.amazon.com/blogs/opensource/rust-runtime-for-aws-lambda/
+# but I don't seem to need it on Mint Linux.
+#
+#[target.x86_64-unknown-linux-musl]
+#linker = "x86_64-linux-musl-gcc"

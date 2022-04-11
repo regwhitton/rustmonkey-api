@@ -233,7 +233,7 @@ mod test {
 
     fn start_db_setup_script() -> Child {
         Command::new("bash")
-            .arg("../db/account-dao-test-setup.sh")
+            .arg("src/account/account-dao-test-setup.sh")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .spawn()

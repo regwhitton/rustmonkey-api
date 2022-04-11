@@ -1,0 +1,29 @@
+version: '3.7'
+
+services:
+  localstack:
+    container_name: localstack
+    image: localstack/localstack:latest
+    environment: 
+      - DEBUG=1
+      - LAMBDA_DOCKER_FLAGS= -e DYNAMODB_SWITCH=LOCAL -e LOCAL_DYNAMODB_ENDPOINT=http://localstack:4566 -e RUST_BACKTRACE=1 -e REGION=${AWS_REGION} -p 7737:7737
+      - LAMBDA_CONTAINER_REGISTRY=local_lambci
+      - LAMBDA_EXECUTOR=docker-reuse
+    ports:
+      - '4563-4599:4563-4599'
+    volumes:
+      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./start-up-scripts:/docker-entrypoint-initaws.d
+      - ../target:/target
+
+  dynamodb-admin:
+    container_name: dynamodb-admin 
+    image: aaronshaf/dynamodb-admin:latest
+    environment: 
+      - AWS_REGION=${AWS_REGION}
+      - AWS_ACCESS_KEY_ID=local
+      - AWS_SECRET_ACCESS_KEY=local
+      - DYNAMO_ENDPOINT=http://localstack:4566
+    ports:
+      - '8001:8001'

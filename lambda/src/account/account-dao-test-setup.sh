@@ -30,8 +30,13 @@ function find_free_port () {
 
 function start_dynamodb_on_port () {
     port=$1
+    
+    if [ -z $(docker images -q amazon/dynamodb-local:latest) ] 
+    then
+        docker pull amazon/dynamodb-local:latest
+    fi
+
     echo "==> Starting DynamoDB container ..." >>$LOG
-    #docker-compose -f ../db/docker-compose.yml up &
     docker run --rm -p $port:8000 amazon/dynamodb-local:latest >>$LOG 2>&1 &
     DOCKER_PID=$!
     trap "kill $DOCKER_PID" EXIT
