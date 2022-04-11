@@ -1,0 +1,55 @@
+
+if [[ -z "$TEST_FRAMEWORK_INITALISED" ]]
+then
+  TEST_FRAMEWORK_INITALISED=1
+  if [[ ! -z "$RUN_TESTS" ]]
+  then
+    # Inside Localstack docker container
+    export AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local \
+      AWS_DEFAULT_REGION=$AWS_REGION
+  fi
+  SERVERLESS_REST_API=$(
+    aws cloudformation describe-stacks \
+      --endpoint-url=http://localhost:4566 \
+      --stack-name rustmonkey-api \
+      --query 'Stacks[0].Outputs[?OutputKey==`ServerlessRestApi`].OutputValue' \
+      --output text )
+  export RUSTMONKEY_URL=https://${SERVERLESS_REST_API}.execute-api.localhost.localstack.cloud:4566/Prod
+
+  FAILURES=0
+
+  function start_test () {
+    TEST_NAME="$1"
+    SKIP_ASSERTS=0
+    TEST_FAILED=0
+  }
+  function end_test () {
+    if [[ "$TEST_FAILED" == "0" ]]
+    then
+      printf "%-20s: %s\n" "$TEST_NAME" "PASSED"
+    else
+      printf "%-20s: %s\n" "$TEST_NAME" "FAILED"
+      (( FAILURES++ ))
+    fi
+  }
+  function setup_failed () {
+    err "Setup failed"
+    SKIP_ASSERTS=1
+  }
+  function assert_code () {
+    if [[ "$SKIP_ASSERTS" == "0" && "$1" != "$2" ]]
+    then
+      err "Expected status code $1 but was $2"
+    fi
+  }
+  function assert_body () {
+    if [[ "$SKIP_ASSERTS" == "0" && "$1" != "$2" ]]
+    then
+      err "Expected body '$1' but was '$2'"
+    fi
+  }
+  function err () {
+    printf "%-20s: %s\n" "$TEST_NAME" "$*"
+    TEST_FAILED=1
+  }
+fi

@@ -1,91 +1,54 @@
 
-#
-# "sam build" copies sources (from lambda) to a fresh build area in /tmp.
-# (Configured by CodeUri in template.yaml)
-# To avoid the copy taking all the previously built dependencies
-# binaries and taking a long time, we keep these outside of lambda.
-# Note use of CARGO_TARGET_DIR.
-#
-# If you use Visual Studio Code with the rust-analyzer plugin then
-# to do the same: add the following option to .vscode/setting.json
-#  "rust-analyzer.server.extraEnv": { "CARGO_TARGET_DIR":"../target" }
-#
+.DEFAULT_GOAL:=help
+SHELL:=/bin/bash
+.PHONY: %
+AWS_REGION:=eu-west-2
 
-#
-# Default "make" used for compiling.  Doesn't hide compiler output.
-#
-.PHONY: build
-build:
-	cd lambda && env PROFILE=debug CARGO_TARGET_DIR="$(PWD)/target" $(MAKE) build
+test: ## Build and run tests
+	cd lambda && $(MAKE) test
 
-#
-# Run tests.
-#
-.PHONY: test
-test:
-	cd lambda && env PROFILE=debug CARGO_TARGET_DIR="$(PWD)/target" RUST_BACKTRACE=1 $(MAKE) test
+build: ## Build lambda in release mode
+	cd lambda && env PROFILE=release $(MAKE) build
 
-#
-# Compile is release mode. Doesn't hide compiler output.
-#
-.PHONY: build-release
-build-release:
-	cd lambda && env PROFILE=release CARGO_TARGET_DIR="$(PWD)/target" $(MAKE) build
+build-debug: ## Build lambda in debug mode
+	cd lambda && env PROFILE=debug $(MAKE) build
 
-#
-# Run a debug profile "sam build".  Needed for "make start-api" and local debugging.
-#
-.PHONY: sam-build
-sam-build:
-	env PROFILE=debug CARGO_TARGET_DIR="$(PWD)/target" sam build
-
-#
-# Run a release profile "sam build".  Create optimized exe for deployment.
-#
-.PHONY: sam-build-release
-sam-build-release:
+package: build ## Package stack for deployment
 	env PROFILE=release CARGO_TARGET_DIR="$(PWD)/target" sam build
 
-#
-# Check changes made to the template.yaml
-#
-.PHONY: sam-validate
-sam-validate:
-	sam validate -t template.yaml
+package-debug: build-debug ## Package stack for debugging locally
+	env PROFILE=debug CARGO_TARGET_DIR="$(PWD)/target" sam build
 
-#
-# Deploy or update the lambda onto AWS and create or update the dynamodb tables.
-#
-.PHONY: sam-deploy
-sam-deploy:
-	sam deploy
+deploy: package ## Deploy the stack onto AWS
+	sam deploy --confirm-changeset
 
-#
-# Remove stack (Lambdas, DynamoDb tables, S3 folders etc)
-#
-.PHONY: sam-delete
-sam-delete:
+delete-stack: ## Remove the deployed stack from AWS
 	sam delete
 
-#
-# Remove all the compiled binaries.
-#
-.PHONY: clean
-clean:
+clean: ## Remove all the compiled binaries and packaging
 	rm -rf target .aws-sam
 
-#
-# Start dynamodb-local and dynamodb-admin for local use.
-# For dynamodb-admin: browse to http://localhost:8001 
-#
-.PHONY: start-db
-start-db:
-	docker-compose -f db/docker-compose.yml pull
-	docker-compose -f db/docker-compose.yml up
+local-deploy: package ## Start Localstack, deploy stack onto it, then wait
+	env AWS_REGION=$(AWS_REGION) make-scripts/deploy-to-localstack.sh
 
+local-test: package ## Start Localstack, deploy stack, run integration tests and stop
+	env AWS_REGION=$(AWS_REGION) make-scripts/run-tests-on-localstack.sh
+
+local-debug: package-debug ## Deploy debuggable stack on Localstack, wait for debugger to attach
+	env AWS_REGION=$(AWS_REGION) make-scripts/debug-on-localstack.sh
+
+validate: ## Validate the template.yaml file
+	sam validate -t template.yaml
+
+
+# tput colors
+cyan := $(shell tput setaf 6)
+reset := $(shell tput sgr0)
 #
-# Start the lambda locally.
+# Credits for Self documenting Makefile:
+# https://www.thapaliya.com/en/writings/well-documented-makefiles/
+# https://github.com/awinecki/magicfile/blob/main/Makefile
 #
-.PHONY: start-api
-start-api:
-	sam local start-api --docker-network db_db-network --warm-containers EAGER --env-vars "local-vars.json"
+help: ## Display this help
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make $(cyan)[target ...]$(reset)\n\nTargets:\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  $(cyan)%-13s$(reset) %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+

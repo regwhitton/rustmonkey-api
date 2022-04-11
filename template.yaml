@@ -8,24 +8,10 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 #Globals:
 #  Function:
-#    Timeout: 20
+#    Environment:
+#      Variables:
 
 Parameters:
-  DynamoDbSwitch:
-    Type: String
-    Description: Switch between global (real) and local (development) DynamoDB.
-    AllowedValues:
-      - 'GLOBAL'
-      - 'LOCAL'
-    Default: 'GLOBAL'
-  LocalDynamoDbEndpoint:
-    Type: String
-    Description: The DynamoDB endpoint URL used if DynamoDbSwitch is LOCAL.
-    Default: ''
-  RegionName:
-    Type: String
-    Description: Default region for deployment.
-    Default: 'eu-west-2'
   RustBacktrace:
     Type: Number
     Description: Enable or disable backtraces for errors.
@@ -35,7 +21,7 @@ Parameters:
     Default: 0
   RustLog:
     Type: String
-    Description: Configure logging.
+    Description: Configure logging level
     # See https://docs.rs/env_logger/latest/env_logger/#enabling-logging
     # Although simple_logger claims compatibility, I haven't found the
     # more complex configuration to work.
@@ -74,9 +60,9 @@ Resources:
             Method: post
       Environment:
         Variables:
-          DYNAMODB_SWITCH: !Ref DynamoDbSwitch
-          LOCAL_DYNAMODB_ENDPOINT: !Ref LocalDynamoDbEndpoint
-          REGION: !Ref RegionName
+          DYNAMODB_SWITCH: "GLOBAL"
+          LOCAL_DYNAMODB_ENDPOINT: ""
+          REGION: !Ref "AWS::Region"
           RUST_BACKTRACE: !Ref RustBacktrace
           RUST_LOG: !Ref RustLog
 
@@ -99,6 +85,9 @@ Outputs:
   RustMonkeyApi:
     Description: "API Gateway endpoint URL for Prod environment for First Function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  ServerlessRestApi:
+    Description: "Id of the API Gateway endpoint"
+    Value: !Sub "${ServerlessRestApi}"
   RustMonkeyFunction:
     Description: "Rust Monkey input function ARN"
     Value: !GetAtt RustMonkeyFunction.Arn
